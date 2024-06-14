@@ -1,5 +1,3 @@
-//DEBUG USE
-
 typedef enum bit[15:0] { 
     ONE = 3,
     TWO = 5,
@@ -7,42 +5,29 @@ typedef enum bit[15:0] {
     FOUR = 13
 } ENUM;
 
-typedef union packed {
-    int x;
-    bit [7:0] byte_value;
-} UNION;
-
 class cls;
     rand ENUM enum_4_;
-    // rand UNION union_2_;    UNSPORTED IN VERILATOR(A DIRECTION TO VESTIGATE)
-    // rand int dyn_arr[];
-    rand bit[31:0] lgc_1_;
+    rand bit[31:0] lgc_32_bit;
     rand bit x;
 
-    constraint combined_debug {
+    constraint enum_con {
         enum_4_ inside {TWO, THREE};
-        //if (lgc_1_ < 100) {
-        //    union_2_.x < 10000;
-        // } else {
-        //    union_2_.byte_value inside {8'h0, 8'hFF};
-        //}
-        //dyn_arr.size() < 5;
     }
     function new();
         enum_4_ = ONE;
     endfunction
 endclass
-//DEBUG USE
 
 class w_sequence_item;
     cls cls_1_;
     int r;
+    int flag = 0;
 
     rand logic[7:0] data1;
     rand logic[7:0] data2;
     rand logic[7:0] data3;
     rand int delay;
-    rand logic flag;
+    
     // constraint w_delay_con { delay > 90 && delay < 700;}
     constraint data1_con {
         // conditional doesn't work
@@ -65,6 +50,7 @@ class w_sequence_item;
     function new(string name = "w_sequence_item");
         cls_1_ = new();
         r = cls_1_.randomize(); // randomize() with {} is not supported in Verilator currently.
+        flag = cls_1_.x;
     endfunction
 
 endclass
@@ -85,7 +71,7 @@ module simple_tb;
             $display("data3(h) = %h", w.data3);
             //$display("data3(d) = %d", w.data3);
             //$display("w_data has constraints that, if flag=1, data inside {1,2,3} or data is even. else, data high 4 bit is 1010.");
-            $display("cls: enum_4_: %0d, lgc_1_: %h, x: %b", w.cls_1_.enum_4_, w.cls_1_.lgc_1_, w.cls_1_.x);
+            $display("cls: enum_4_: %0d, lgc_32_bit: %h, x: %b", w.cls_1_.enum_4_, w.cls_1_.lgc_32_bit, w.cls_1_.x);
             //$display("cls has constraints that, enum_4_ inside {5, 8}");
             $display("***************************");
 
@@ -102,7 +88,7 @@ module simple_tb;
             //$display("data3(d) = %d", w.data3);
 
             //$display("w_data has constraints that, if flag=1, data inside {1,2,3} or data is even. else, data high 4 bit is 1010.");
-            $display("cls: enum_4_: %0d, lgc_1_: %h, x: %b", w.cls_1_.enum_4_, w.cls_1_.lgc_1_, w.cls_1_.x);
+            $display("cls: enum_4_: %0d, lgc_32_bit: %h, x: %b", w.cls_1_.enum_4_, w.cls_1_.lgc_32_bit, w.cls_1_.x);
 
             //$display("cls has constraints that, enum_4_ inside {5, 8}");
             $display("***************************");
