@@ -1,0 +1,19 @@
+# vlib work
+# ** Warning: (vlib-34) Library already exists at "work".
+# Errors: 0, Warnings: 1
+#  vmap work work
+# QuestaSim-64 vmap 2022.3 Lib Mapping Utility 2022.07 Jul 18 2022
+# vmap work work 
+# Modifying modelsim.ini
+#  vlog -work work ../test_4_conditional_constrain.sv
+# QuestaSim-64 vlog 2022.3 Compiler 2022.07 Jul 18 2022
+# Start time: 14:57:37 on Jun 14,2024
+# vlog -work work ../test_4_conditional_constrain.sv 
+# -- Compiling package test_4_conditional_constrain_sv_unit
+# -- Compiling module test_4_conditional_constrain
+# 
+# Top level modules:
+# 	test_4_conditional_constrain
+# End time: 14:57:37 on Jun 14,2024, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+#  quit

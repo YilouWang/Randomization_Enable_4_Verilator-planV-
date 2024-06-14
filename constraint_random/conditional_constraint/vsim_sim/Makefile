@@ -41,6 +41,7 @@ else
 endif
 
 compile: $(SV_FILES)
+	$(SIMULATOR) -work $(WORK_DIR) -c -do \
 	"vlib $(WORK_DIR); \
 	vmap work $(WORK_DIR); \
 	vlog -work $(WORK_DIR) $(VERILOG_DEFINE_FILES); \
