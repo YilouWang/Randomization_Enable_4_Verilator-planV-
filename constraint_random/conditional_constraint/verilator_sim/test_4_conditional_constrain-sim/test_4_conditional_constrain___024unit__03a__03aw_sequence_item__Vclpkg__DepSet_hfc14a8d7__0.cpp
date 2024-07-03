@@ -9,12 +9,19 @@ void test_4_conditional_constrain___024unit__03a__03aw_sequence_item::__VnoInFun
     VL_DEBUG_IF(VL_DBG_MSGF("+          test_4_conditional_constrain___024unit__03a__03aw_sequence_item::__VnoInFunc_randomize\n"); );
     // Body
     randomize__Vfuncrtn = this->__PVT__constraint.next(__Vm_rng);
-    this->__PVT__data1 = (0xffU & VL_RANDOM_RNG_I(__Vm_rng));
     this->__PVT__delay = VL_RANDOM_RNG_I(__Vm_rng);
 }
 
 void test_4_conditional_constrain___024unit__03a__03aw_sequence_item::__VnoInFunc_data1_con_setup_constraint(test_4_conditional_constrain__Syms* __restrict vlSymsp) {
     VL_DEBUG_IF(VL_DBG_MSGF("+          test_4_conditional_constrain___024unit__03a__03aw_sequence_item::__VnoInFunc_data1_con_setup_constraint\n"); );
+    // Body
+    this->__PVT__constraint.write_var(this->__PVT__flag, 0x20ULL, 
+                                      "flag");
+    this->__PVT__constraint.write_var(this->__PVT__data1, 8ULL, 
+                                      "data1");
+    this->__PVT__constraint.hard(std::string{"(ite flag)"}, 
+                                 std::string{"(or (or (= ((_ zero_extend 24) data1) #x00000001) (= ((_ zero_extend 24) data1) #x00000002)) (= ((_ zero_extend 24) data1) #x00000003))"}, 
+                                 std::string{"(= (bvand data1 #xf0) #xa0)"});
 }
 
 void test_4_conditional_constrain___024unit__03a__03aw_sequence_item::__VnoInFunc_data2_con_setup_constraint(test_4_conditional_constrain__Syms* __restrict vlSymsp) {
