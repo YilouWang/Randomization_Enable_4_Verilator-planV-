@@ -16,7 +16,7 @@ verilator-version:
 CMD = $(pwd)
 UVM_ROOT ?=/home/yilou/Desktop/OSVISE/uvm/uvm-verilator
 
-VERILOG_DEFINE_FILES = ../test_4_conditional_constrain.sv
+VERILOG_DEFINE_FILES = ../implication_con_and_if_else_con.sv
 VERILOG_INCLUDE_DIRS = ${UVM_ROOT}/src
 
 SV_PATHS := .
@@ -25,7 +25,7 @@ SV_FILES := $(foreach path,$(SV_PATHS),$(wildcard $(path)/*svh) $(wildcard $(pat
 # -------------------------------------
 # Compilation/simulation configuration
 # -------------------------------------
-SIM_NAME ?= test_4_conditional_constrain
+SIM_NAME ?= implication_con_and_if_else_con
 SIM_DIR := $(SIM_NAME)-sim
 COMPILE_ARGS += -DUVM_NO_DPI
 COMPILE_ARGS += --prefix $(SIM_NAME) -o $(SIM_NAME)
