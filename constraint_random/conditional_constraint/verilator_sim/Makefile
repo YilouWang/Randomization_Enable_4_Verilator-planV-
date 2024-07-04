@@ -35,10 +35,16 @@ WARNING_ARGS += -Wno-lint \
 	-Wno-style \
 	-Wno-SYMRSVDWORD \
 	-Wno-IGNOREDRETURN \
-	-Wno-CONSTRAINTIGN \
-	-Wno-ZERODLY
+	-Wno-ZERODLY \
+	-Wno-CONSTRAINTIGN
+
 ifeq ($(json_dump),1)
 	EXTRA_ARGS += -dump-tree-json
+else
+endif
+
+ifeq ($(debug),1)
+	EXTRA_ARGS += --debug --gdbbt -CFLAGS -DVL_DEBUG=1
 else
 endif
 
