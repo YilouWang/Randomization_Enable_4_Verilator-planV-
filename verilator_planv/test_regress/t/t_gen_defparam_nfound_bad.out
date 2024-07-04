@@ -1,4 +1,0 @@
-%Error: t/t_gen_defparam_nfound_bad.v:9:17: In defparam, instance z never declared
-    9 |    defparam z.W = 3;   
-      |                 ^
-%Error: Exiting due to

@@ -1,4 +1,0 @@
-%Error: t/t_display_esc_bad.v:9:16: Unknown escape sequence: \x
-    9 |       $display("\x\y\z");   
-      |                ^~~~~~~~
-%Error: Exiting due to

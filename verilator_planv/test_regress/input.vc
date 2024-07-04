@@ -1,4 +1,0 @@
-
-+librescan +notimingchecks +libext+.v
- -y t
- +incdir+t

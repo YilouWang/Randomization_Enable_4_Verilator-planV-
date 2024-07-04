@@ -1,3 +1,0 @@
-%Error: Testbench C call to 'VerilatedContext::trace()' must not be called after 'VerilatedTrace*::open()'
-
-Aborting...
