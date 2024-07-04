@@ -112,6 +112,9 @@ public:
         m_vars[name] = std::make_shared<const VlRandomVar>(name, width, &var);
     }
     void hard(std::string&& constraint);
+    void hard(std::string&& constraint1, std::string&& constraint2, std::string&& constraint3);
+private:
+    std::string removeOuterParentheses(const std::string& str);
 #ifdef VL_DEBUG
     void dump() const;
 #endif

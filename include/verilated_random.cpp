@@ -365,7 +365,7 @@ bool VlRandomizer::next(VlRNG& rngr) {
 bool VlRandomizer::parseSolution(std::iostream& f) {
     std::string sat;
     do { std::getline(f, sat); } while (sat == "");
-
+    //dump();
     if (sat == "unsat") return false;
     if (sat != "sat") {
         std::stringstream msg;
@@ -411,7 +411,25 @@ bool VlRandomizer::parseSolution(std::iostream& f) {
 }
 
 void VlRandomizer::hard(std::string&& constraint) {
+    std::cout << constraint << std::endl;
     m_constraints.emplace_back(std::move(constraint));
+}
+
+void VlRandomizer::hard(std::string&& constraint1, std::string&& constraint2, std::string&& constraint3) {
+    constraint1 = removeOuterParentheses(constraint1);
+    //std::string trueExpr = removeOuterParentheses(constraint2);
+    //std::string falseExpr = removeOuterParentheses(constraint3);
+
+    std::string conditionalConstraint = "(" + constraint1 + " " + constraint2 + constraint3 + ")";
+    std::cout << conditionalConstraint << std::endl;
+    m_constraints.emplace_back(std::move(conditionalConstraint));
+}
+
+std::string VlRandomizer::removeOuterParentheses(const std::string& str) {
+    if(str.front() == '(' && str.back() == ')') {
+        return str.substr(1, str.size() -2);
+    }
+    return str;
 }
 
 #ifdef VL_DEBUG

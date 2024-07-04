@@ -145,6 +145,275 @@ public:
 
 //######################################################################
 // Visitor that turns constraints into template strings for solvers
+class ConstraintIfVisitor final : public VNVisitor {
+    AstTask* const m_taskp;  // X_setup_constraint() method of the constraint
+    AstVar* const m_genp;  // VlRandomizer variable of the class
+    bool editFormat(AstNodeExpr* nodep) {
+        if(nodep->name() == "flag") {
+            UINFO(2, "YILOU:DEBUG::Flag Format False " << nodep << endl);
+            return false;
+        }
+        if (nodep->user1()) {
+            UINFO(2, "YILOU:DEBUG::Format False " << nodep << endl);
+            return false;
+        }
+        // Replace computable expression with SMT constant
+        VNRelinker handle;
+        nodep->unlinkFrBack(&handle);
+        AstSFormatF* const newp = new AstSFormatF{
+            nodep->fileline(), (nodep->width() & 3) ? "#b%b" : "#x%x", false, nodep};
+        handle.relink(newp);
+        return true;
+    }
+    bool editCond(AstNodeExpr* nodep) {
+        VNRelinker handle;
+        nodep->unlinkFrBack(&handle);
+        AstSFormatF* const newp = new AstSFormatF{
+            nodep->fileline(), "ite", false, nodep};
+        handle.relink(newp);
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::1dumping node " << oss.str() << endl);
+        return true;
+    }
+    void editSMT(AstNodeExpr* nodep, AstNodeExpr* lhsp = nullptr, AstNodeExpr* rhsp = nullptr) {
+        // Replace incomputable (result-dependent) expression with SMT expression
+        UINFO(2, "YILOU:DEBUG::1 " << nodep << endl);
+        std::string smtExpr = nodep->emitSMT();  // Might need child width (AstExtend)
+        UINFO(2, "YILOU:DEBUG::1 " << smtExpr <<endl);
+        UASSERT_OBJ(smtExpr != "", nodep,
+                    "Node needs randomization constraint, but no emitSMT: " << nodep);
+        UINFO(2, "YILOU:DEBUG::1 " << endl);
+        if (lhsp) lhsp = VN_AS(iterateSubtreeReturnEdits(lhsp->unlinkFrBack()), NodeExpr);
+        if (rhsp) rhsp = VN_AS(iterateSubtreeReturnEdits(rhsp->unlinkFrBack()), NodeExpr);
+        UINFO(2, "YILOU:DEBUG::2 " << endl);
+        AstNodeExpr* argsp = nullptr;
+        for (string::iterator pos = smtExpr.begin(); pos != smtExpr.end(); ++pos) {
+            if (pos[0] == '%') {
+                ++pos;
+                switch (pos[0]) {
+                case '%': break;
+                case 'l':
+                    pos[0] = '@';
+                    UASSERT_OBJ(lhsp, nodep, "emitSMT() references undef node");
+                    argsp = AstNode::addNext(argsp, lhsp);
+                    lhsp = nullptr;
+                    break;
+                case 'r':
+                    pos[0] = '@';
+                    UASSERT_OBJ(rhsp, nodep, "emitSMT() references undef node");
+                    argsp = AstNode::addNext(argsp, rhsp);
+                    rhsp = nullptr;
+                    break;
+                default: nodep->v3fatalSrc("Unknown emitSMT format code: %" << pos[0]); break;
+                }
+            }
+        }
+        UINFO(2, "YILOU:DEBUG::3 " << endl);
+        UASSERT_OBJ(!lhsp, nodep, "Missing emitSMT %l for " << lhsp);
+        UASSERT_OBJ(!rhsp, nodep, "Missing emitSMT %r for " << rhsp);
+        AstSFormatF* const newp = new AstSFormatF{nodep->fileline(), smtExpr, false, argsp};
+        UINFO(2, "YILOU:DEBUG::3 " << smtExpr << endl);
+        UINFO(2, "YILOU:DEBUG::3 " << argsp << endl);
+        nodep->replaceWith(newp);
+        VL_DO_DANGLING(pushDeletep(nodep), nodep);
+    }
+    // VISITORS
+    void visit(AstConstraintIf* nodep) {
+        //std::string smtExpr = nodep->condp()->emitSMT();
+        
+        //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 1Match! " << nodep->condp());
+        
+        //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 2Match! " << nodep->condp());
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::Dumping node(ConstraintIf) " << oss.str() << endl);
+        iterateChildren(nodep);
+        //if(nodep->condp()->typeName() == "REDOR")
+        //{
+            //editCond(nodep->condp());
+            
+            //nodep->dump(str);
+            //UINFO(2, "YILOU:DEBUG::dumping node(ConstraintIf) " << oss.str() << endl);
+            //iterateChildren(nodep->condp());
+            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 3Match! " << nodep->condp());
+            //if (editFormat(nodep->condp())) return;
+            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: Match! " << nodep->condp());
+            
+            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 4Match! " << nodep->condp());
+            //newcondp->addExprsp();
+            //nodep->condp()->replaceWith(newcondp);
+            //editSMT(nodep->condp());
+            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 5Match! " << nodep->condp());
+        //}
+
+        //if (editFormat(nodep->condp())) return;
+        
+
+        //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: Find condp(AstNodeExpr) of ConstraintIf. "
+        //                                 << nodep->condp()->type() << nodep->condp()->typeName());
+        // Can detect this node!
+    }
+    
+    void visit(AstNodeVarRef* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::0.0dumping node(AstNodeVarRef) " << oss.str() << endl);
+        
+        if (editFormat(nodep)) {
+            //nodep->dump(str);
+            //UINFO(2, "YILOU:DEBUG::0.1dumping node(AstNodeVarRef) " << oss.str() << endl);
+            return;
+        }
+        //UINFO(2, "YILOU:DEBUG::4Here? " << endl);
+        // In SMT just variable name, but we also ensure write_var for the variable
+        const std::string smtName = nodep->name();  // Can be anything unique
+        nodep->replaceWith(new AstSFormatF{nodep->fileline(), smtName, false, nullptr});
+
+        AstVar* const varp = nodep->varp();
+        //nodep->dump(str);
+        //UINFO(2, "YILOU:DEBUG::0.2dumping node(AstNodeVarRef) " << oss.str() << endl);
+        VL_DO_DANGLING(pushDeletep(nodep), nodep);
+
+        if (!varp->user4()) {
+            varp->user4(true);
+            AstCMethodHard* const methodp = new AstCMethodHard{
+                varp->fileline(), new AstVarRef{varp->fileline(), m_genp, VAccess::READWRITE},
+                "write_var"};
+            methodp->dtypeSetVoid();
+            methodp->addPinsp(new AstVarRef{varp->fileline(), varp, VAccess::WRITE});
+            methodp->addPinsp(new AstConst{varp->dtypep()->fileline(), AstConst::Unsized64{},
+                                           (size_t)varp->width()});
+            AstNodeExpr* const varnamep
+                = new AstCExpr{varp->fileline(), "\"" + smtName + "\"", varp->width()};
+            varnamep->dtypep(varp->dtypep());
+            methodp->addPinsp(varnamep);
+            m_taskp->addStmtsp(new AstStmtExpr{varp->fileline(), methodp});
+        }
+
+
+    }
+
+    void visit(AstNodeBiop* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::5Dumping node(NodeBiop) " << oss.str() << endl);
+        if (editFormat(nodep)) {
+            nodep->dump(str);
+            UINFO(2, "YILOU:DEBUG::5.1Dumping node(NodeBiop) " << oss.str() << endl);
+            return;
+        }
+        editSMT(nodep, nodep->lhsp(), nodep->rhsp());
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::5.2Dumping node(NodeBiop) " << oss.str() << endl);
+    }
+    void visit(AstNodeUniop* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::6Dumping node(AstNodeUniop) " << oss.str() << endl);
+        if (nodep->typeName() == "REDOR")
+        {
+            editSMT(nodep, nodep->lhsp());
+            nodep->dump(str);
+            UINFO(2, "YILOU:DEBUG::RedOr Dumping node(AstNodeUniop) " << oss.str() << endl);
+        }
+        else{
+            if (editFormat(nodep)) {
+                nodep->dump(str);
+                UINFO(2, "YILOU:DEBUG::6.11Dumping node(AstNodeUniop) " << oss.str() << endl);
+                return;
+            }
+            editSMT(nodep, nodep->lhsp());
+            nodep->dump(str);
+            UINFO(2, "YILOU:DEBUG::6.12Dumping node(AstNodeUniop) " << oss.str() << endl);
+        }
+    }
+    void visit(AstReplicate* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::7Dumping node(AstReplicate) " << oss.str() << endl);
+        // Biop, but RHS is harmful
+        if (editFormat(nodep)) return;
+        editSMT(nodep, nodep->srcp());
+    }
+
+    void visit(AstSFormatF* nodep) override {}
+    void visit(AstNode* nodep) override {
+        nodep->v3fatalSrc(
+            "Visit function missing? Constraint function missing for node: " << nodep);
+    }
+
+    void visit(AstConstraintExpr* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::1.0dumping node(AstConstraintExpr) " << oss.str() << endl);
+        iterateChildren(nodep);
+        //nodep->dump(str);
+        //UINFO(2, "YILOU:DEBUG::1.1dumping node(AstConstraintExpr) " << oss.str() << endl);
+        }
+
+    void visit(AstCMethodHard* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::2.0dumping node(AstNodeExpr) " << oss.str() << endl);
+ 
+
+        if (editFormat(nodep))   {
+
+        //nodep->dump(str);
+        //UINFO(2, "YILOU:DEBUG::2.1dumping node(AstNodeExpr) " << oss.str() << endl);
+        return;
+        }
+
+        UASSERT_OBJ(nodep->name() == "size", nodep, "Non-size method call in constraints");
+
+        AstNode* fromp = nodep->fromp();
+        // Warn early while the dtype is still there
+        fromp->v3warn(E_UNSUPPORTED, "Unsupported: random member variable with type "
+                                         << fromp->dtypep()->prettyDTypeNameQ());
+
+        
+        //nodep->dump(str);
+        //UINFO(2, "YILOU:DEBUG::2.2dumping node(AstCMethodHard) " << oss.str() << endl);
+
+        iterateChildren(nodep);  // Might change fromp
+        fromp = nodep->fromp()->unlinkFrBack();
+        fromp->dtypep(nodep->dtypep());
+        nodep->replaceWith(fromp);
+        VL_DO_DANGLING(pushDeletep(nodep), nodep);
+    }
+    void visit(AstNodeExpr* nodep) override {
+        std::ostringstream oss;
+        std::ostream &str = oss;
+        nodep->dump(str);
+        UINFO(2, "YILOU:DEBUG::3.0dumping node(AstNodeExpr) " << oss.str() << endl);
+
+        if (editFormat(nodep)) {  
+
+        //nodep->dump(str);
+        //UINFO(2, "YILOU:DEBUG::3.1dumping node(AstNodeExpr) " << oss.str() << endl);
+        return;
+        }
+        //UINFO(2, "YILOU:DEBUG::3Here? " << endl);
+        //editSMT(nodep);
+    }
+
+public:
+    // CONSTRUCTORS
+    explicit ConstraintIfVisitor(AstConstraintIf* nodep, AstTask* taskp, AstVar* genp)
+        : m_taskp(taskp)
+        , m_genp(genp) {
+        iterate(nodep);
+    }
+};
 
 class ConstraintExprVisitor final : public VNVisitor {
     // NODE STATE
@@ -551,21 +820,70 @@ class RandomizeVisitor final : public VNVisitor {
         }
 
         while (nodep->itemsp()) {
-            AstConstraintExpr* const condsp = VN_CAST(nodep->itemsp(), ConstraintExpr);
-            if (!condsp || condsp->user1()) {
-                nodep->itemsp()->v3warn(CONSTRAINTIGN,
-                                        "Constraint expression ignored (unsupported)");
-                pushDeletep(nodep->itemsp()->unlinkFrBack());
-                continue;
+            
+            if (VN_IS(nodep->itemsp(), ConstraintIf)) {
+                //nodep->itemsp()->v3warn(CONSTRAINTIGN,
+                //                        "Yilou_DEBUG:ConstraintIf node detected!");
+                AstConstraintIf* const nodeIf = VN_CAST(nodep->itemsp(), ConstraintIf);
+                if (!nodeIf) {
+                    nodep->itemsp()->v3warn(CONSTRAINTIGN,
+                                            "Yilou_DEBUG:After IS, Cast Error");
+                    pushDeletep(nodep->itemsp()->unlinkFrBack());
+                    continue;
+                }
+                {ConstraintIfVisitor{nodeIf->unlinkFrBack(), taskp, genp}; }
+
+                UINFO(2, "YILOU:DEBUG::Call CMethodHard" << "  " << nodeIf->condp() << "  " << nodeIf->thensp() << "  " << nodeIf->elsesp() << endl);
+
+
+                AstConstraintExpr* const thensp = VN_CAST(nodeIf->thensp(), ConstraintExpr);
+                //{ ConstraintExprVisitor{thensp->unlinkFrBack(), taskp, genp}; }
+
+                thensp->unlinkFrBack();
+                //nodeIf->condp()->addNextHere(thensp->exprp()->unlinkFrBack());
+                //nodeIf->condp()->addHereThisAsNext(nodeIf->thensp()->exprp()->unlinkFrBack());
+
+                AstCMethodHard* const methodp = new AstCMethodHard{
+                nodeIf->fileline(), new AstVarRef{nodeIf->fileline(), genp, VAccess::READWRITE},
+                "hard", nodeIf->condp()->unlinkFrBack()};
+                methodp->dtypeSetVoid();
+
+
+                AstConstraintExpr* const elsesp = VN_CAST(nodeIf->elsesp(), ConstraintExpr);
+                //{ ConstraintExprVisitor{elsesp->unlinkFrBack(), taskp, genp}; }
+
+                //methodp->addPinsp(nodeIf->condp()->unlinkFrBack());
+                //AstConstraintExpr* const condp = VN_CAST(nodeIf->condp(), ConstraintExpr);
+                
+                elsesp->unlinkFrBack();
+
+                methodp->addPinsp(thensp->exprp()->unlinkFrBack());
+                methodp->addPinsp(elsesp->exprp()->unlinkFrBack());
+                taskp->addStmtsp(new AstStmtExpr{nodeIf->fileline(), methodp});
+                             
+                VL_DO_DANGLING(thensp->deleteTree(), thensp);
+                VL_DO_DANGLING(elsesp->deleteTree(), elsesp);
+               
+                //nodeIf->unlinkFrBack();
+                VL_DO_DANGLING(nodeIf->deleteTree(), nodeIf);
+                
+            } else {
+                AstConstraintExpr* const condsp = VN_CAST(nodep->itemsp(), ConstraintExpr);
+                if (!condsp || condsp->user1()) {
+                    nodep->itemsp()->v3warn(CONSTRAINTIGN,
+                                            "Yilou_DEBUG:Constraint expression ignored (unsupported)");
+                    pushDeletep(nodep->itemsp()->unlinkFrBack());
+                    continue;
+                }
+                { ConstraintExprVisitor{condsp->unlinkFrBack(), taskp, genp}; }
+                // Only hard constraints are now supported
+                AstCMethodHard* const methodp = new AstCMethodHard{
+                    condsp->fileline(), new AstVarRef{condsp->fileline(), genp, VAccess::READWRITE},
+                    "hard", condsp->exprp()->unlinkFrBack()};
+                methodp->dtypeSetVoid();
+                taskp->addStmtsp(new AstStmtExpr{condsp->fileline(), methodp});
+                VL_DO_DANGLING(condsp->deleteTree(), condsp);
             }
-            { ConstraintExprVisitor{condsp->unlinkFrBack(), taskp, genp}; }
-            // Only hard constraints are now supported
-            AstCMethodHard* const methodp = new AstCMethodHard{
-                condsp->fileline(), new AstVarRef{condsp->fileline(), genp, VAccess::READWRITE},
-                "hard", condsp->exprp()->unlinkFrBack()};
-            methodp->dtypeSetVoid();
-            taskp->addStmtsp(new AstStmtExpr{condsp->fileline(), methodp});
-            VL_DO_DANGLING(condsp->deleteTree(), condsp);
         }
         VL_DO_DANGLING(pushDeletep(nodep->unlinkFrBack()), nodep);
     }
