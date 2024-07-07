@@ -416,11 +416,11 @@ void VlRandomizer::hard(std::string&& constraint) {
 }
 
 void VlRandomizer::hard(std::string&& constraint1, std::string&& constraint2, std::string&& constraint3) {
-    constraint1 = removeOuterParentheses(constraint1);
+    //constraint1 = removeOuterParentheses(constraint1);
     //std::string trueExpr = removeOuterParentheses(constraint2);
     //std::string falseExpr = removeOuterParentheses(constraint3);
 
-    std::string conditionalConstraint = "(" + constraint1 + " " + constraint2 + constraint3 + ")";
+    std::string conditionalConstraint = "(ite " + constraint1 + " " + constraint2 + constraint3 + ")";
     std::cout << conditionalConstraint << std::endl;
     m_constraints.emplace_back(std::move(conditionalConstraint));
 }
