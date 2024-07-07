@@ -198,7 +198,6 @@ class ConstraintIfVisitor final : public VNVisitor {
                 }
             }
         }
-
         UASSERT_OBJ(!lhsp, nodep, "Missing emitSMT %l for " << lhsp);
         UASSERT_OBJ(!rhsp, nodep, "Missing emitSMT %r for " << rhsp);
         AstSFormatF* const newp = new AstSFormatF{nodep->fileline(), smtExpr, false, argsp};
@@ -207,6 +206,9 @@ class ConstraintIfVisitor final : public VNVisitor {
         nodep->replaceWith(newp);
         VL_DO_DANGLING(pushDeletep(nodep), nodep);
     }
+
+    
+
     // VISITORS
     void visit(AstConstraintIf* nodep) {
 
@@ -542,6 +544,26 @@ class RandomizeVisitor final : public VNVisitor {
     std::map<std::string, AstCDType*> m_randcDtypes;  // RandC data type deduplication
 
     // METHODS
+    void processConstraintIf(AstConstraintIf* nodeIf, AstCMethodHard* methodp) {
+        if (VN_IS(nodeIf->elsesp(), ConstraintIf)) {
+            UINFO(2, "Die Dai" << endl);
+            AstConstraintIf* const nodeIfIf = VN_CAST(nodeIf->elsesp(), ConstraintIf);
+            AstConstraintExpr* const thenspsp = VN_CAST(nodeIfIf->thensp(), ConstraintExpr);
+            thenspsp->unlinkFrBack();       
+            methodp->addPinsp(nodeIfIf->condp()->unlinkFrBack());
+            methodp->addPinsp(thenspsp->exprp()->unlinkFrBack());
+
+            processConstraintIf(nodeIfIf, methodp);
+        } else {
+            AstConstraintExpr* const elsesp = VN_CAST(nodeIf->elsesp(), ConstraintExpr);
+            elsesp->unlinkFrBack();
+            methodp->addPinsp(elsesp->exprp()->unlinkFrBack());
+            UINFO(2, "2" << endl);
+            VL_DO_DANGLING(elsesp->deleteTree(), elsesp);
+            UINFO(2, "3" << endl);
+        }
+    }
+    // Orginal Methods
     AstVar* enumValueTabp(AstEnumDType* nodep) {
         if (nodep->user2p()) return VN_AS(nodep->user2p(), Var);
         UINFO(9, "Construct Venumvaltab " << nodep << endl);
@@ -769,6 +791,7 @@ class RandomizeVisitor final : public VNVisitor {
         addPrePostCall(nodep, funcp, "post_randomize");
         nodep->user1(false);
     }
+
     void visit(AstConstraint* nodep) override {
         AstNodeFTask* const newp = VN_AS(m_memberMap.findMember(m_modp, "new"), NodeFTask);
         UASSERT_OBJ(newp, m_modp, "No new() in class");
@@ -801,8 +824,22 @@ class RandomizeVisitor final : public VNVisitor {
                 {ConstraintIfVisitor{nodeIf->unlinkFrBack(), taskp, genp}; }
 
                 UINFO(2, "*************\n" << "YILOU:DEBUG::Call CMethodHard" << "  " << nodeIf << nodeIf->condp() << "  " << nodeIf->thensp() << "  " << nodeIf->elsesp() << "\n*************" << endl);
+                AstConstraintExpr* const thensp = VN_CAST(nodeIf->thensp(), ConstraintExpr);
+                thensp->unlinkFrBack();
+                AstCMethodHard* const methodp = new AstCMethodHard{
+                    nodeIf->fileline(), new AstVarRef{nodeIf->fileline(), genp, VAccess::READWRITE},
+                    "hard", nodeIf->condp()->unlinkFrBack()};
+                methodp->dtypeSetVoid();
+                methodp->addPinsp(thensp->exprp()->unlinkFrBack());
+                UINFO(2, "1" << endl);
+                VL_DO_DANGLING(thensp->deleteTree(), thensp);
+                processConstraintIf(nodeIf, methodp);
 
-
+                taskp->addStmtsp(new AstStmtExpr{nodeIf->fileline(), methodp});
+                UINFO(2, "4" << endl);
+                VL_DO_DANGLING(nodeIf->deleteTree(), nodeIf);
+                UINFO(2, "5" << endl);
+                /*
                 AstConstraintExpr* const thensp = VN_CAST(nodeIf->thensp(), ConstraintExpr);
                 //{ ConstraintExprVisitor{thensp->unlinkFrBack(), taskp, genp}; }
 
@@ -831,7 +868,7 @@ class RandomizeVisitor final : public VNVisitor {
                     VL_DO_DANGLING(thensp->deleteTree(), thensp);
                     //VL_DO_DANGLING(newp->deleteTree(), newp);
                 }
-
+                
                 else {
                     AstConstraintExpr* const elsesp = VN_CAST(nodeIf->elsesp(), ConstraintExpr);
                     elsesp->unlinkFrBack();
@@ -847,7 +884,7 @@ class RandomizeVisitor final : public VNVisitor {
                 //AstConstraintExpr* const condp = VN_CAST(nodeIf->condp(), ConstraintExpr);
                 //nodeIf->unlinkFrBack();
                 VL_DO_DANGLING(nodeIf->deleteTree(), nodeIf);
-                
+                */
             } else {
                 AstConstraintExpr* const condsp = VN_CAST(nodep->itemsp(), ConstraintExpr);
                 if (!condsp || condsp->user1()) {

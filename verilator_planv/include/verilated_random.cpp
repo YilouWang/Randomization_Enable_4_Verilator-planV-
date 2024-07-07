@@ -365,7 +365,7 @@ bool VlRandomizer::next(VlRNG& rngr) {
 bool VlRandomizer::parseSolution(std::iostream& f) {
     std::string sat;
     do { std::getline(f, sat); } while (sat == "");
-    dump();
+    //dump();
     if (sat == "unsat") return false;
     if (sat != "sat") {
         std::stringstream msg;

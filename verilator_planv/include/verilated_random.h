@@ -134,13 +134,11 @@ template<typename... Args>
 void VlRandomizer::hard(Args&&... args) {
     if constexpr (sizeof...(args) == 1) {
         std::string constraint = std::move(std::get<0>(std::forward_as_tuple(args...)));
-        std::cout << constraint << std::endl;
         m_constraints.emplace_back(std::move(constraint));
     } else {
         std::initializer_list<std::string> constraints = {std::forward<Args>(args)...};
         std::string conditionalConstraint = buildConditionalConstraint(constraints);
         m_constraints.emplace_back(std::move(conditionalConstraint));
-        std::cout << conditionalConstraint << std::endl;
     }
     
 }
