@@ -150,9 +150,10 @@ class ConstraintIfVisitor final : public VNVisitor {
     AstVar* const m_genp;  // VlRandomizer variable of the class
     bool editFormat(AstNodeExpr* nodep) {
         if(nodep->name() == "flag") {
-            UINFO(2, "YILOU:DEBUG::Flag Format False " << nodep << endl);
-            return false;
+            UINFO(2, "YILOU:DEBUG::FFFFFFFFFFFFFFFFFFFlag Format False " << nodep->user1() << endl);
+        //    return false;
         }
+        
         if (nodep->user1()) {
             UINFO(2, "YILOU:DEBUG::Format False " << nodep << endl);
             return false;
@@ -165,18 +166,7 @@ class ConstraintIfVisitor final : public VNVisitor {
         handle.relink(newp);
         return true;
     }
-    bool editCond(AstNodeExpr* nodep) {
-        VNRelinker handle;
-        nodep->unlinkFrBack(&handle);
-        AstSFormatF* const newp = new AstSFormatF{
-            nodep->fileline(), "ite", false, nodep};
-        handle.relink(newp);
-        std::ostringstream oss;
-        std::ostream &str = oss;
-        nodep->dump(str);
-        UINFO(2, "YILOU:DEBUG::1dumping node " << oss.str() << endl);
-        return true;
-    }
+
     void editSMT(AstNodeExpr* nodep, AstNodeExpr* lhsp = nullptr, AstNodeExpr* rhsp = nullptr) {
         // Replace incomputable (result-dependent) expression with SMT expression
         UINFO(2, "YILOU:DEBUG::1 " << nodep << endl);
@@ -184,10 +174,8 @@ class ConstraintIfVisitor final : public VNVisitor {
         UINFO(2, "YILOU:DEBUG::1 " << smtExpr <<endl);
         UASSERT_OBJ(smtExpr != "", nodep,
                     "Node needs randomization constraint, but no emitSMT: " << nodep);
-        UINFO(2, "YILOU:DEBUG::1 " << endl);
         if (lhsp) lhsp = VN_AS(iterateSubtreeReturnEdits(lhsp->unlinkFrBack()), NodeExpr);
         if (rhsp) rhsp = VN_AS(iterateSubtreeReturnEdits(rhsp->unlinkFrBack()), NodeExpr);
-        UINFO(2, "YILOU:DEBUG::2 " << endl);
         AstNodeExpr* argsp = nullptr;
         for (string::iterator pos = smtExpr.begin(); pos != smtExpr.end(); ++pos) {
             if (pos[0] == '%') {
@@ -210,7 +198,7 @@ class ConstraintIfVisitor final : public VNVisitor {
                 }
             }
         }
-        UINFO(2, "YILOU:DEBUG::3 " << endl);
+
         UASSERT_OBJ(!lhsp, nodep, "Missing emitSMT %l for " << lhsp);
         UASSERT_OBJ(!rhsp, nodep, "Missing emitSMT %r for " << rhsp);
         AstSFormatF* const newp = new AstSFormatF{nodep->fileline(), smtExpr, false, argsp};
@@ -221,40 +209,14 @@ class ConstraintIfVisitor final : public VNVisitor {
     }
     // VISITORS
     void visit(AstConstraintIf* nodep) {
-        //std::string smtExpr = nodep->condp()->emitSMT();
-        
-        //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 1Match! " << nodep->condp());
-        
-        //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 2Match! " << nodep->condp());
+
         std::ostringstream oss;
         std::ostream &str = oss;
         nodep->dump(str);
-        UINFO(2, "YILOU:DEBUG::Dumping node(ConstraintIf) " << oss.str() << endl);
+        UINFO(2, "*************\n" << "YILOU:DEBUG::Dumping node(ConstraintIf) " << oss.str() << "\n*************" << endl);
         iterateChildren(nodep);
-        //if(nodep->condp()->typeName() == "REDOR")
-        //{
-            //editCond(nodep->condp());
-            
-            //nodep->dump(str);
-            //UINFO(2, "YILOU:DEBUG::dumping node(ConstraintIf) " << oss.str() << endl);
-            //iterateChildren(nodep->condp());
-            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 3Match! " << nodep->condp());
-            //if (editFormat(nodep->condp())) return;
-            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: Match! " << nodep->condp());
-            
-            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 4Match! " << nodep->condp());
-            //newcondp->addExprsp();
-            //nodep->condp()->replaceWith(newcondp);
-            //editSMT(nodep->condp());
-            //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: 5Match! " << nodep->condp());
-        //}
-
-        //if (editFormat(nodep->condp())) return;
-        
-
-        //nodep->v3warn(E_UNSUPPORTED, "Yilou Debug: Find condp(AstNodeExpr) of ConstraintIf. "
-        //                                 << nodep->condp()->type() << nodep->condp()->typeName());
-        // Can detect this node!
+        //AstConstraintExpr nodep_new = VN_CAST(nodep, ConstraintExpr)
+        //nodep->replaceWith(nodep_new);
     }
     
     void visit(AstNodeVarRef* nodep) override {
@@ -262,20 +224,19 @@ class ConstraintIfVisitor final : public VNVisitor {
         std::ostream &str = oss;
         nodep->dump(str);
         UINFO(2, "YILOU:DEBUG::0.0dumping node(AstNodeVarRef) " << oss.str() << endl);
-        
+        /*
         if (editFormat(nodep)) {
-            //nodep->dump(str);
-            //UINFO(2, "YILOU:DEBUG::0.1dumping node(AstNodeVarRef) " << oss.str() << endl);
+            nodep->dump(str);
+            UINFO(2, "YILOU:DEBUG::0.1dumping node(AstNodeVarRef) " << oss.str() << endl);
             return;
         }
-        //UINFO(2, "YILOU:DEBUG::4Here? " << endl);
+        UINFO(2, "YILOU:DEBUG::Var goes to SMT Here? " << endl);
+        */
         // In SMT just variable name, but we also ensure write_var for the variable
         const std::string smtName = nodep->name();  // Can be anything unique
         nodep->replaceWith(new AstSFormatF{nodep->fileline(), smtName, false, nullptr});
 
         AstVar* const varp = nodep->varp();
-        //nodep->dump(str);
-        //UINFO(2, "YILOU:DEBUG::0.2dumping node(AstNodeVarRef) " << oss.str() << endl);
         VL_DO_DANGLING(pushDeletep(nodep), nodep);
 
         if (!varp->user4()) {
@@ -293,8 +254,6 @@ class ConstraintIfVisitor final : public VNVisitor {
             methodp->addPinsp(varnamep);
             m_taskp->addStmtsp(new AstStmtExpr{varp->fileline(), methodp});
         }
-
-
     }
 
     void visit(AstNodeBiop* nodep) override {
@@ -302,14 +261,22 @@ class ConstraintIfVisitor final : public VNVisitor {
         std::ostream &str = oss;
         nodep->dump(str);
         UINFO(2, "YILOU:DEBUG::5Dumping node(NodeBiop) " << oss.str() << endl);
-        if (editFormat(nodep)) {
+        if (nodep->typeName() == "GTS" || nodep->typeName() == "LTS" ||  nodep->typeName() == "EQ")
+        {
+            editSMT(nodep, nodep->lhsp(), nodep->rhsp());
             nodep->dump(str);
-            UINFO(2, "YILOU:DEBUG::5.1Dumping node(NodeBiop) " << oss.str() << endl);
-            return;
+            UINFO(2, "YILOU:DEBUG::GTS/LTS Dumping node(AstNodeUniop) " << oss.str() << endl);
         }
-        editSMT(nodep, nodep->lhsp(), nodep->rhsp());
-        nodep->dump(str);
-        UINFO(2, "YILOU:DEBUG::5.2Dumping node(NodeBiop) " << oss.str() << endl);
+        else{
+            if (editFormat(nodep)) {
+                nodep->dump(str);
+                UINFO(2, "YILOU:DEBUG::5.1Dumping node(NodeBiop) " << oss.str() << endl);
+                return;
+            }
+            editSMT(nodep, nodep->lhsp(), nodep->rhsp());
+            nodep->dump(str);
+            UINFO(2, "YILOU:DEBUG::5.2Dumping node(NodeBiop) " << oss.str() << endl);
+        }
     }
     void visit(AstNodeUniop* nodep) override {
         std::ostringstream oss;
@@ -833,7 +800,7 @@ class RandomizeVisitor final : public VNVisitor {
                 }
                 {ConstraintIfVisitor{nodeIf->unlinkFrBack(), taskp, genp}; }
 
-                UINFO(2, "YILOU:DEBUG::Call CMethodHard" << "  " << nodeIf->condp() << "  " << nodeIf->thensp() << "  " << nodeIf->elsesp() << endl);
+                UINFO(2, "*************\n" << "YILOU:DEBUG::Call CMethodHard" << "  " << nodeIf << nodeIf->condp() << "  " << nodeIf->thensp() << "  " << nodeIf->elsesp() << "\n*************" << endl);
 
 
                 AstConstraintExpr* const thensp = VN_CAST(nodeIf->thensp(), ConstraintExpr);
@@ -848,22 +815,36 @@ class RandomizeVisitor final : public VNVisitor {
                 "hard", nodeIf->condp()->unlinkFrBack()};
                 methodp->dtypeSetVoid();
 
+                if(VN_IS(nodeIf->elsesp(), ConstraintIf)) {
+                    AstConstraintIf* const nodeIfIf = VN_CAST(nodeIf->elsesp(), ConstraintIf);
+                    
+                    AstConstraintExpr* const thenspsp = VN_CAST(nodeIfIf->thensp(), ConstraintExpr);
+                    thenspsp->unlinkFrBack();
+                    AstConstraintExpr* const elsespsp = VN_CAST(nodeIfIf->elsesp(), ConstraintExpr);
+                    elsespsp->unlinkFrBack();
+                    
+                    methodp->addPinsp(thensp->exprp()->unlinkFrBack());
+                    methodp->addPinsp(nodeIfIf->condp()->unlinkFrBack());
+                    methodp->addPinsp(thenspsp->exprp()->unlinkFrBack());
+                    methodp->addPinsp(elsespsp->exprp()->unlinkFrBack());
+                    taskp->addStmtsp(new AstStmtExpr{nodeIf->fileline(), methodp});
+                    VL_DO_DANGLING(thensp->deleteTree(), thensp);
+                    //VL_DO_DANGLING(newp->deleteTree(), newp);
+                }
 
-                AstConstraintExpr* const elsesp = VN_CAST(nodeIf->elsesp(), ConstraintExpr);
+                else {
+                    AstConstraintExpr* const elsesp = VN_CAST(nodeIf->elsesp(), ConstraintExpr);
+                    elsesp->unlinkFrBack();
+                    methodp->addPinsp(elsesp->exprp()->unlinkFrBack());
+                    methodp->addPinsp(thensp->exprp()->unlinkFrBack());
+                    taskp->addStmtsp(new AstStmtExpr{nodeIf->fileline(), methodp});
+                    VL_DO_DANGLING(thensp->deleteTree(), thensp);
+                    VL_DO_DANGLING(elsesp->deleteTree(), elsesp);
+                }
+                
                 //{ ConstraintExprVisitor{elsesp->unlinkFrBack(), taskp, genp}; }
-
                 //methodp->addPinsp(nodeIf->condp()->unlinkFrBack());
                 //AstConstraintExpr* const condp = VN_CAST(nodeIf->condp(), ConstraintExpr);
-                
-                elsesp->unlinkFrBack();
-
-                methodp->addPinsp(thensp->exprp()->unlinkFrBack());
-                methodp->addPinsp(elsesp->exprp()->unlinkFrBack());
-                taskp->addStmtsp(new AstStmtExpr{nodeIf->fileline(), methodp});
-                             
-                VL_DO_DANGLING(thensp->deleteTree(), thensp);
-                VL_DO_DANGLING(elsesp->deleteTree(), elsesp);
-               
                 //nodeIf->unlinkFrBack();
                 VL_DO_DANGLING(nodeIf->deleteTree(), nodeIf);
                 

@@ -365,7 +365,7 @@ bool VlRandomizer::next(VlRNG& rngr) {
 bool VlRandomizer::parseSolution(std::iostream& f) {
     std::string sat;
     do { std::getline(f, sat); } while (sat == "");
-    //dump();
+    dump();
     if (sat == "unsat") return false;
     if (sat != "sat") {
         std::stringstream msg;
@@ -410,19 +410,35 @@ bool VlRandomizer::parseSolution(std::iostream& f) {
     return true;
 }
 
-void VlRandomizer::hard(std::string&& constraint) {
-    std::cout << constraint << std::endl;
-    m_constraints.emplace_back(std::move(constraint));
-}
+std::string VlRandomizer::buildConditionalConstraint(std::initializer_list<std::string> constraints) {
+    auto it = constraints.begin();
+    std::ostringstream oss;
 
-void VlRandomizer::hard(std::string&& constraint1, std::string&& constraint2, std::string&& constraint3) {
+    if(constraints.size() % 2 == 0) {
+        throw std::invalid_argument("Number of Args are invalid!!!");
+    }
+
+    size_t ite_count = (constraints.size() - 1) / 2;
+
+    for (size_t i = 0; i < ite_count; ++i) {
+        if (i > 0){
+            oss << " ";
+        }
+        oss << "(ite " << *it++ << " " << *it++; // (ite (cond) (then)
+    }
+    
+    oss << " " << *it;
+    
+    for (size_t i = 0; i < ite_count; ++i) {
+        oss << ")";
+    }
+
+    return oss.str();
     //constraint1 = removeOuterParentheses(constraint1);
     //std::string trueExpr = removeOuterParentheses(constraint2);
     //std::string falseExpr = removeOuterParentheses(constraint3);
 
-    std::string conditionalConstraint = "(ite " + constraint1 + " " + constraint2 + constraint3 + ")";
-    std::cout << conditionalConstraint << std::endl;
-    m_constraints.emplace_back(std::move(conditionalConstraint));
+    //std::string conditionalConstraint = "(ite " + constraint1 + " " + constraint2 + constraint3 + ")";
 }
 
 std::string VlRandomizer::removeOuterParentheses(const std::string& str) {
