@@ -13,20 +13,20 @@ class implication_con_and_if_else_con_class;
     constraint imp_con {
         ic_data1 > 2 -> ic_data2 inside {1, 2, 3};
     }
-
+    
     constraint flag_con {
         flag > -4 && flag < 4;
         sub_flag inside {-15, -10, -5, 0, 10, 20, 25};
     }
 
     constraint if_else_con_1 {
-        if(flag > -2) {
+        if(flag > 2) {
             iec_data1 inside {1, 2, 3} || iec_data1 % 2 == 0;
         } else {
             (iec_data1 & 8'hF0) == 8'hA0;
         }
     }
-
+    
     constraint if_else_con_2 {
         if(flag > 2) {
             iec_data2 inside {1, 2, 3};
@@ -39,7 +39,7 @@ class implication_con_and_if_else_con_class;
             iec_data2 inside {8, 9};
         }
     }
-    /*
+    
     constraint if_else_con_3 {
         if (flag > 0) {
             if (sub_flag > 10) {
@@ -49,7 +49,7 @@ class implication_con_and_if_else_con_class;
             } else {
                 iec_data3 inside {4, 5};
             }
-        } else if (flag == 0 || flag == -1) {
+        } else if (flag == 0) { // || flag == -1) {
             if (sub_flag < -10) {
                 iec_data3 inside {10, 11};
             } else {
@@ -65,7 +65,7 @@ class implication_con_and_if_else_con_class;
             }
         }
     }
-    */
+    
 
 endclass
 

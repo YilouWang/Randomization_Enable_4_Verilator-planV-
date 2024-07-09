@@ -125,6 +125,7 @@ public:
 private:
     std::string removeOuterParentheses(const std::string& str);
     std::string buildConditionalConstraint(std::initializer_list<std::string> constraints);
+    std::string parseExpr(std::vector<std::string>::iterator& it, std::vector<std::string>::iterator end);
 #ifdef VL_DEBUG
     void dump() const;
 #endif
@@ -138,6 +139,7 @@ void VlRandomizer::hard(Args&&... args) {
     } else {
         std::initializer_list<std::string> constraints = {std::forward<Args>(args)...};
         std::string conditionalConstraint = buildConditionalConstraint(constraints);
+        std::cout << conditionalConstraint << std::endl;
         m_constraints.emplace_back(std::move(conditionalConstraint));
     }
     
