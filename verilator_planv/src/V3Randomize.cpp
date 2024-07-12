@@ -53,6 +53,7 @@ class RandomizeMarkVisitor final : public VNVisitorConst {
     BaseToDerivedMap m_baseToDerivedMap;  // Mapping from base classes to classes that extend them
     AstClass* m_classp = nullptr;  // Current class
     AstConstraintExpr* m_constraintExprp = nullptr;  // Current constraint expression
+    AstConstraintIf* m_constraintIf = nullptr;
     
 
     // METHODS
@@ -95,13 +96,10 @@ class RandomizeMarkVisitor final : public VNVisitorConst {
             if (p.first->user1()) markDerived(p.first);
         }
     }
-    void markCondpandDerived(const AstNodeExpr* condp) {
-        //condp->user1(true);
-    }
 
     // VISITORS
     void visit(AstClass* nodep) override {
-        //UINFO(2, "markVisitor::astclass nodep: " << nodep << " " << nodep->user1() << endl);
+        UINFO(2, "markVisitor::astclass nodep: " << nodep << " " << nodep->user1() << endl);
         VL_RESTORER(m_classp);
         m_classp = nodep;
         iterateChildrenConst(nodep);
@@ -112,7 +110,7 @@ class RandomizeMarkVisitor final : public VNVisitorConst {
         }
     }
     void visit(AstMethodCall* nodep) override {
-        //UINFO(2, "markVisitor::AstMethodCall nodep: " << nodep << " " << nodep->user1() << endl);
+        UINFO(2, "markVisitor::AstMethodCall nodep: " << nodep << " " << nodep->user1() << endl);
         iterateChildrenConst(nodep);
         if (nodep->name() != "randomize") return;
         if (const AstClassRefDType* const classRefp
@@ -123,27 +121,27 @@ class RandomizeMarkVisitor final : public VNVisitorConst {
         }
     }
     void visit(AstNodeFTaskRef* nodep) override {
-        //UINFO(2, "markVisitor::NodeFTaskRef nodep: " << nodep << " " << nodep->user1() << endl);
+        UINFO(2, "markVisitor::NodeFTaskRef nodep: " << nodep << " " << nodep->user1() << endl);
         iterateChildrenConst(nodep);
         if (nodep->name() != "randomize") return;
         if (m_classp) m_classp->user1(true);
     }
     void visit(AstConstraintExpr* nodep) override {
-        //UINFO(2, "markVisitor::ConstraintExpr nodep: " << nodep << " " << nodep->user1() << endl);
+        UINFO(2, "markVisitor::ConstraintExpr nodep: " << nodep << " " << nodep->user1() << endl);
         VL_RESTORER(m_constraintExprp);
         m_constraintExprp = nodep;
         iterateChildrenConst(nodep);
     }
     void visit(AstNodeVarRef* nodep) override {
-        //UINFO(2, "markVisitor::VarRef nodep: " << nodep << " " << nodep->user1() << endl);
+        UINFO(2, "markVisitor::VarRef nodep: " << nodep << " " << nodep->user1() << endl);
         
-        if(m_constraintExprp) {
+        if(m_constraintExprp || m_constraintIf) {
             if (!nodep->varp()->isRand()) {
                 m_constraintExprp->user1(true);
                 nodep->v3warn(CONSTRAINTIGN, "State-dependent constraint ignored (unsupported)");
                 return;
             }
-            for (AstNode* backp = nodep; backp != m_constraintExprp && !backp->user1();
+            for (AstNode* backp = nodep; backp != m_constraintExprp && backp != m_constraintIf && !backp->user1();
                 backp = backp->backp())
                 backp->user1(true);
         }
@@ -151,12 +149,24 @@ class RandomizeMarkVisitor final : public VNVisitorConst {
     }
 
     void visit(AstNode* nodep) override { 
-        //UINFO(2, "markVisitor::AstNode nodep: " << nodep << " " << nodep->user1() << endl);
+        UINFO(2, "markVisitor::AstNode nodep: " << nodep << " " << nodep->user1() << endl);
         iterateChildrenConst(nodep); 
     }
 
     void visit(AstConstraintIf* nodep) override {
+        UINFO(2, "markVisitor::ConstraintIf nodep: " << nodep << " " << nodep->user1() << endl);
+        VL_RESTORER(m_constraintIf);
+        m_constraintIf = nodep;
         iterateChildrenConst(nodep); 
+    }
+
+    void visit(AstNodeBiop* nodep) override {
+        UINFO(2, "markVisitor::AstNodeBiop nodep: " << nodep << " " << nodep->user1() << endl);
+        iterateChildrenConst(nodep);
+    }
+
+    void visit(AstNodeUniop* nodep) override {
+        iterateChildrenConst(nodep);
     }
 
 public:
@@ -268,12 +278,12 @@ class ConstraintIfVisitor final : public VNVisitor {
     
     void visit(AstNodeVarRef* nodep) override {
         UINFO(2, "ConstraintIf::VarRef " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
-        if (nodep->user3() && !nodep->user1()) {
-            UINFO(2, "Condp()->VarRef" << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
-        }
-        else {
+        //if (nodep->user3()) {
+        //    UINFO(2, "Condp()->VarRef" << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
+        //}
+        //else {
             if (editFormat(nodep)) {return;}
-        }
+        //}
             // In SMT just variable name, but we also ensure write_var for the variable
             const std::string smtName = nodep->name();  // Can be anything unique
             nodep->replaceWith(new AstSFormatF{nodep->fileline(), smtName, false, nullptr});
@@ -307,19 +317,21 @@ class ConstraintIfVisitor final : public VNVisitor {
         //    nodep->dump(str);
         //    UINFO(2, "YILOU:DEBUG::GTS/LTS/EQ/LOGOR Dumping node(AstNodeUniop) " << oss.str() << endl);
         //}
-        if (nodep->user3() && !nodep->user1())
+        if (nodep->user3())
         {
+            UINFO(2, "Process as a condp." << endl);
             editSMT_condp(nodep, nodep->lhsp(), nodep->rhsp());
         }
         else{
             if (editFormat(nodep)) {return;}
             editSMT(nodep, nodep->lhsp(), nodep->rhsp());
+
         }
     }
     void visit(AstNodeUniop* nodep) override {
         UINFO(2, "ConstraintIf::NodeUniop " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
 
-        if (nodep->user3() && !nodep->user1())
+        if (nodep->user3())
         {
             editSMT_condp(nodep, nodep->lhsp());
         }
@@ -437,7 +449,7 @@ class ConstraintExprVisitor final : public VNVisitor {
 
     // VISITORS
     void visit(AstNodeVarRef* nodep) override {
-        UINFO(2, "ConstraintExpr::VarRef " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
+        //UINFO(2, "ConstraintExpr::VarRef " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
         if (editFormat(nodep)) return;
         // In SMT just variable name, but we also ensure write_var for the variable
         const std::string smtName = nodep->name();  // Can be anything unique
@@ -464,17 +476,17 @@ class ConstraintExprVisitor final : public VNVisitor {
         }
     }
     void visit(AstNodeBiop* nodep) override {
-        UINFO(2, "ConstraintExpr::NodeBiop " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
+        //UINFO(2, "ConstraintExpr::NodeBiop " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
         if (editFormat(nodep)) return;
         editSMT(nodep, nodep->lhsp(), nodep->rhsp());
     }
     void visit(AstNodeUniop* nodep) override {
-        UINFO(2, "ConstraintExpr::NodeUniop " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
+        //UINFO(2, "ConstraintExpr::NodeUniop " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
         if (editFormat(nodep)) return;
         editSMT(nodep, nodep->lhsp());
     }
     void visit(AstReplicate* nodep) override {
-        UINFO(2, "ConstraintExpr::NodeReplicate " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
+        //UINFO(2, "ConstraintExpr::NodeReplicate " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
         // Biop, but RHS is harmful
         if (editFormat(nodep)) return;
         editSMT(nodep, nodep->srcp());
@@ -539,6 +551,7 @@ class RandomizeVisitor final : public VNVisitor {
     size_t m_enumValueTabCount = 0;  // Number of tables with enum values created
     int m_randCaseNum = 0;  // Randcase number within a module for var naming
     std::map<std::string, AstCDType*> m_randcDtypes;  // RandC data type deduplication
+    AstNodeExpr* m_constraintIf_condp = nullptr;
     AstConstraintIf* m_constraintIf = nullptr;
 
     // METHODS
@@ -815,14 +828,16 @@ class RandomizeVisitor final : public VNVisitor {
             VN_AS(m_modp, Class)->addMembersp(genp);
             m_modp->user4p(genp);
         }
-
+        
         while (nodep->itemsp()) {
             
             if (VN_IS(nodep->itemsp(), ConstraintIf)) {
+                iterateChildrenConst(nodep);
                 AstConstraintIf* const nodeIf = VN_CAST(nodep->itemsp(), ConstraintIf);
-                
                 VL_RESTORER(m_constraintIf);
                 m_constraintIf = nodeIf;
+                VL_RESTORER(m_constraintIf_condp);
+                m_constraintIf_condp = nodeIf->condp();
                 iterateChildrenConst(nodeIf);
 
                 if (!nodeIf) {
@@ -928,14 +943,24 @@ class RandomizeVisitor final : public VNVisitor {
     void visit(AstNode* nodep) override { iterateChildren(nodep); }
     void visit(AstNodeVarRef* nodep) override {
         if(m_constraintIf) {
-                for (AstNode* backp = nodep; backp != m_constraintIf && !backp->user3();
-                backp = backp->backp()){
+            nodep->user3(true);
+            for (AstNode* backp = nodep->backp(); backp != m_constraintIf && !backp->user3(); backp = backp->backp()){
+                if (backp == m_constraintIf_condp) {
                     backp->user3(true);
                     UINFO(2, "randomizeVisitor::VarRef->backp->backp... *************    : " << nodep << " " << nodep->user1() << " " << nodep->user3() << endl);
                 }
             }
+        }
+        return;
     }
-    
+    void visit(AstConstraintIf* nodep) override {
+        VL_RESTORER(m_constraintIf);
+        m_constraintIf = nodep;
+        VL_RESTORER(m_constraintIf_condp);
+        m_constraintIf_condp = nodep->condp();
+        iterateChildrenConst(nodep);
+    }
+
 public:
     // CONSTRUCTORS
     explicit RandomizeVisitor(AstNetlist* nodep) { iterate(nodep); }
