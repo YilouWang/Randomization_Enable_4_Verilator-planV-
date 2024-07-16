@@ -6,6 +6,6 @@ In constraint_random/ folder, I put some demos inside it to check whether constr
 
 Currently, 
 1. constraint works with Verilator.(check the demo in demo/ folder.)
-2. conditional constraint does not work with verilator, you can check in conditinoal_constraint/ folder. Works with vsim but not works with Verilator.(In progress...)
-3. randomize() with{} not supported in Verilator.(check the demo in demo/ folder.)
-4. Union and dynamic array not supported as rand variables.(check the demo in demo/ folder.)
+2. conditional constraint does not work with verilator, you can check in conditinoal_constraint/ folder. Works with vsim but not works with Verilator.(Solved... With a different way)
+3. randomize() with{} not supported in Verilator.(check the demo in demo/ folder.) (solved by Verilator)
+4. Union and dynamic array not supported as rand variables.(check the demo in demo/ folder.) (in progress...)

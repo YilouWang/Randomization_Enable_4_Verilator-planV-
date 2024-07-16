@@ -59,40 +59,32 @@ module test_4_conditional_constrain;
     w_sequence_item w;
     int v;
     initial begin
-        repeat(10) begin
-            //$display("***************************");
-            $display("***************************");
-            w = new();
-            $display("w_sequence_item: delay: %0d, flag: %b", w.delay, w.flag);
-            $display("data1(h) = %h", w.data1);
-            //$display("data1(d) = %d", w.data1);
-            $display("data2(h) = %h", w.data2);
-            //$display("data2(d) = %d", w.data2);
-            $display("data3(h) = %h", w.data3);
-            //$display("data3(d) = %d", w.data3);
-            //$display("w_data has constraints that, if flag=1, data inside {1,2,3} or data is even. else, data high 4 bit is 1010.");
-            $display("cls: enum_4_: %0d, lgc_32_bit: %h, x: %b", w.cls_1_.enum_4_, w.cls_1_.lgc_32_bit, w.cls_1_.x);
-            //$display("cls has constraints that, enum_4_ inside {5, 8}");
-            $display("***************************");
+        repeat(50) begin
 
+            w = new();
             v = w.randomize(); // with { delay > 90 && delay < 700; };
             if (v !=1 ) $stop;
             
+            if (w.flag) begin
+                if (!(w.data1 == 1 || w.data1 == 2 || w.data1 == 3)) $display("Constraint violated: flag = %0d, data1 = %0d", w.flag, w.data1);
+            end else begin
+                if (!((w.data1 & 8'hF0) == 8'hA0)) $display("Constraint violated: flag = %0d, data1 = %0d", w.flag, w.data1);
+            end
+            
+            if (!(w.data2 == 1 || w.data2 == 2 || w.data2 == 3)) $display("Constraint violated: data2 = %0d", w.data2);
+            if (!((w.data3 & 8'hF0) == 8'hA0)) $display("Constraint violated: data3 = %0d", w.data3);
+
+            if (!(w.cls_1_.enum_4_ == 5 || w.cls_1_.enum_4_ == 8)) $display("Constraint violated: cls_1_.enum_4_ = %0d", w.cls_1_.enum_4_);
+
             //$display(w);
             $display("w_sequence_item: delay: %0d, flag: %b", w.delay, w.flag);
             $display("data1(h) = %h", w.data1);
-            //$display("data1(d) = %d", w.data1);
             $display("data2(h) = %h", w.data2);
-            //$display("data2(d) = %d", w.data2);
             $display("data3(h) = %h", w.data3);
-            //$display("data3(d) = %d", w.data3);
 
-            //$display("w_data has constraints that, if flag=1, data inside {1,2,3} or data is even. else, data high 4 bit is 1010.");
             $display("cls: enum_4_: %0d, lgc_32_bit: %h, x: %b", w.cls_1_.enum_4_, w.cls_1_.lgc_32_bit, w.cls_1_.x);
-
-            //$display("cls has constraints that, enum_4_ inside {5, 8}");
             $display("***************************");
-            //$display("***************************");
+            
         end
         $finish;
     end

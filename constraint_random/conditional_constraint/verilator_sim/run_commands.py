@@ -12,7 +12,7 @@ def run_command(command):
 """
 def main():
     commands = [
-        "cd /home/yilou/Desktop/OSVISE/verilator && ./configure && make",
+        "cd /home/yilou/Desktop/OSVISE/Randomization_Enable_4_Verilator-planV-/verilator_planv && ./configure && make",
         "make clean",
         "make json_dump=1 debug=1"
     ]

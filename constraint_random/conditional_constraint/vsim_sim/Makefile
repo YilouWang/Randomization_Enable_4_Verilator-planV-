@@ -1,6 +1,11 @@
-all: simulate
 
-TOPLEVEL_MODULE = test_4_conditional_constrain
+ifeq ($(test),1)
+	TESTNAME = implication_con_and_if_else_con
+else
+	TESTNAME = test_4_conditional_constrain
+endif
+
+TOPLEVEL_MODULE = $(TESTNAME)
 #TESTBENCH_MODULE = sv_tb_top
 SIMULATOR = vsim
 
@@ -26,11 +31,11 @@ endif
 LIBDIR = $(UVM_ROOT)/src/lib
 LIBNAME = uvm_dpi
 
-VERILOG_DEFINE_FILES = ../test_4_conditional_constrain.sv
+VERILOG_DEFINE_FILES = ../$(TESTNAME).sv
 
 WORK_DIR = work
 
-SV_FILES := ../test_4_conditional_constrain.sv
+SV_FILES := ../$(TESTNAME).sv
 
 VSIM_OPTS = $(DPILIB_VSIM_OPT) -do "run -all" -l simulate.log
 
@@ -39,6 +44,8 @@ ifeq ($(GUI),1)
 else
 	VSIM_OPTS += -c
 endif
+
+all: clean simulate
 
 compile: $(SV_FILES)
 	$(SIMULATOR) -work $(WORK_DIR) -c -do \

@@ -49,7 +49,7 @@ class implication_con_and_if_else_con_class;
             } else {
                 iec_data3 inside {4, 5};
             }
-        } else if (flag == 0) { // || flag == -1) {
+        } else if (flag == 0 || flag == -1) {
             if (sub_flag < -10) {
                 iec_data3 inside {10, 11};
             } else {
@@ -65,13 +65,10 @@ class implication_con_and_if_else_con_class;
             }
         }
     }
-    
-
 endclass
 
 module implication_con_and_if_else_con;
-    
-    //implication_con_and_if_else_con w;
+
     implication_con_and_if_else_con_class w = new;
     int v;
 
@@ -84,17 +81,62 @@ module implication_con_and_if_else_con;
             v = w.randomize(); // with { delay > 90 && delay < 700; };
             if (v !=1 ) $stop;
             
+            // Test results
+            
+            if (w.ic_data1 > 2) begin
+                if (!(w.ic_data2 == 1 || w.ic_data2 == 2 || w.ic_data2 == 3)) $display("Constraint violated: ic_data1 = %0d, ic_data2 = %0d", w.ic_data1, w.ic_data2);
+            end
 
-            //$display("ic_data1(h) = %h", w.ic_data1);
-            //$display("ic_data2(h) = %h", w.ic_data2);
+            if (w.flag > 2) begin
+                if (!(w.iec_data1 == 1 || w.iec_data1 == 2 || w.iec_data1 == 3 || w.iec_data1 % 2 == 0)) $display("Constraint violated: flag = %0d, iec_data1 = %0d", w.flag, w.iec_data1);
+            end else begin
+                if (!((w.iec_data1 & 8'hF0) == 8'hA0)) $display("Constraint violated: flag = %0d, iec_data1 = %0d", w.flag, w.iec_data1);
+            end
+
+            if (w.flag > 2) begin
+                if (!(w.iec_data2 == 1 || w.iec_data2 == 2 || w.iec_data2 == 3)) $display("Constraint violated: flag = %0d, iec_data2 = %0d", w.flag, w.iec_data2);
+            end else if (w.flag > 0) begin
+                if (!(w.iec_data2 == 4 || w.iec_data2 == 5)) $display("Constraint violated: flag = %0d, iec_data2 = %0d", w.flag, w.iec_data2);
+            end else if (w.flag > -2) begin
+                if (!(w.iec_data2 == 6 || w.iec_data2 == 7)) $display("Constraint violated: flag = %0d, iec_data2 = %0d", w.flag, w.iec_data2);
+            end else begin
+                if (!(w.iec_data2 == 8 || w.iec_data2 == 9)) $display("Constraint violated: flag = %0d, iec_data2 = %0d", w.flag, w.iec_data2);
+            end
+                // assert doesn't work!
+            if (w.flag > 0) begin
+                if (w.sub_flag > 10) begin
+                    assert(w.iec_data3 == 1 || w.iec_data3 == 2 || w.iec_data3 == 3 || w.iec_data3 % 2 == 0) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end else if (w.sub_flag == 10) begin
+                    assert(w.iec_data3 == 6 || w.iec_data3 == 7) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end else begin
+                    assert(w.iec_data3 == 4 || w.iec_data3 == 5) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end
+            end else if (w.flag == 0 || w.flag == -1) begin
+                if (w.sub_flag < -10) begin
+                    assert(w.iec_data3 == 10 || w.iec_data3 == 11) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end else begin
+                    assert(w.iec_data3 == 12 || w.iec_data3 == 13) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end
+            end else begin
+                if (w.sub_flag > 20) begin
+                    assert(w.iec_data3 == 14 || w.iec_data3 == 15) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end else if (w.sub_flag == 20) begin
+                    assert(w.iec_data3 == 16 || w.iec_data3 == 17) else $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end else begin
+                    // Error
+                    if(!(w.iec_data3 == 8 || w.iec_data3 == 9)) $error("Constraint violated: flag = %0d, sub_flag = %0d, iec_data3 = %0d", w.flag, w.sub_flag, w.iec_data3);
+                end
+            end
+
+            $display("ic_data1(h) = %h", w.ic_data1);
+            $display("ic_data2(h) = %h", w.ic_data2);
 
             $display("flag(d) = %d", w.flag);
-            //$display("sub_flag(d) = %d", w.sub_flag);
-            //$display("iec_data1(h) = %h", w.iec_data1);
-            $display("iec_data2(h) = %h", w.iec_data2);
-            //$display("iec_data3(h) = %h", w.iec_data3);
-            
-            $display("***************************");
+            $display("sub_flag(d) = %d", w.sub_flag);
+            $display("iec_data1(h) = %h", w.iec_data1);
+            $display("iec_data2(d) = %d", w.iec_data2);
+            $display("iec_data3(d) = %d", w.iec_data3);
+
         end
         $finish;
     end

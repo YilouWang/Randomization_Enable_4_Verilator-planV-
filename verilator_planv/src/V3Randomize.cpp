@@ -134,7 +134,6 @@ class RandomizeMarkVisitor final : public VNVisitorConst {
     }
     void visit(AstNodeVarRef* nodep) override {
         UINFO(2, "markVisitor::VarRef nodep: " << nodep << " " << nodep->user1() << endl);
-        
         if(m_constraintExprp || m_constraintIf) {
             if (!nodep->varp()->isRand()) {
                 m_constraintExprp->user1(true);
